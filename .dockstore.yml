@@ -1,0 +1,6 @@
+version: 1.2
+workflows:
+
+  - name: CPG_KCCG_WARP_MultiSample
+    subclass: WDL
+    primaryDescriptorPath: /workflows/MultipleSamples.wdl

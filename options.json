@@ -1,0 +1,9 @@
+{
+    "workflow_failure_mode": "ContinueWhilePossible",
+    "write_to_cache": false,
+    "read_from_cache": false,
+    "use_relative_output_paths": true,
+    "final_workflow_log_dir":     "gs://pb-dev-312200.appspot.com/workflow-tests/wdl-workflows/wf_logs",
+    "final_call_logs_dir":        "gs://pb-dev-312200.appspot.com/workflow-tests/wdl-workflows/call_logs",
+    "final_workflow_outputs_dir": "gs://pb-dev-312200.appspot.com/workflow-tests/wdl-workflows/utputs"
+}
