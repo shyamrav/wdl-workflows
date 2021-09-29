@@ -204,7 +204,7 @@ workflow SingleSample {
 
   if (output_alignment_file) {
     if (to_cram){
-      File alignment_md5_to_output = select_first(Crammer.output_cram_md5])
+      File alignment_md5_to_output = select_first([Crammer.output_cram_md5])
     }
     File alignment_file_to_output = select_first([Crammer.output_cram, mapped_file])
     File alignment_indx_to_output = select_first([Crammer.output_cram_index, mapped_indx])
