@@ -41,14 +41,24 @@ workflow MultipleSamples {
     String sample_name = sample_map_lines[idx][0]
     File bam_or_cram_or_fastq1 = sample_map_lines[idx][1]
     File bai_or_crai_or_fastq2 = sample_map_lines[idx][2]
-      
+    String RGID = select_first([sample_map_lines[idx][3], "None"])
+    String RGPL = select_first([sample_map_lines[idx][4], "ILLUMINA"])
+    String RGPU = select_first([sample_map_lines[idx][5], "None"])
+    String RGLB = select_first([sample_map_lines[idx][6], "None"])
+    String RGCN = select_first([sample_map_lines[idx][7], "None"])
+
     Input inp = object {
        sample_name: sample_name,
        base_file_name: sample_name,
        bam_or_cram_or_fastq1: bam_or_cram_or_fastq1,
        bai_or_crai_or_fastq2: bai_or_crai_or_fastq2,
-       final_gvcf_base_name: sample_name
-    }  
+       final_gvcf_base_name: sample_name,
+       RGID: RGID,
+       RGPL: RGPL,
+       RGPU: RGPU,
+       RGLB: RGLB,
+       RGCN: RGCN
+    }
   
     call SingleSample.SingleSample {
       input:

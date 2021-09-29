@@ -24,7 +24,7 @@ workflow Alignment {
     Float lod_threshold
     Boolean hard_clip_reads = false
     
-    Boolean to_cram = false
+#    Boolean to_cram = false
     String? subset_region
 
     Boolean bin_base_qualities = true
@@ -65,6 +65,11 @@ workflow Alignment {
       input:
         fastq1 = inp.bam_or_cram_or_fastq1,
         fastq2 = inp.bai_or_crai_or_fastq2,
+        RGID = inp.RGID,
+        RGPL = inp.RGPL,
+        RGPU = inp.RGPU,
+        RGLB = inp.RGLB,
+        RGCN = inp.RGCN,
         sample_name = inp.sample_name,
         output_bam_basename = inp.base_file_name,
         reference_fasta = references.reference_fasta,
@@ -152,16 +157,16 @@ workflow Alignment {
   }
 
   # Convert to CRAM here
-  if(to_cram){
-    call Utils.ConvertToCram as Crammer {
-      input:
-        input_bam = GatherBamFiles.output_bam,
-        ref_fasta = references.reference_fasta.ref_fasta,
-        ref_fasta_index = references.reference_fasta.ref_fasta_index,
-        output_basename = inp.base_file_name,
-        preemptible_tries = papi_settings.agg_preemptible_tries
-    }
-  }
+#  if(to_cram){
+#    call Utils.ConvertToCram as Crammer {
+#      input:
+#        input_bam = GatherBamFiles.output_bam,
+#        ref_fasta = references.reference_fasta.ref_fasta,
+#        ref_fasta_index = references.reference_fasta.ref_fasta_index,
+#        output_basename = inp.base_file_name,
+#        preemptible_tries = papi_settings.agg_preemptible_tries
+#    }
+#  }
 
   if (defined(haplotype_database_file) && check_fingerprints) {
     # Check identity of fingerprints across readgroups
@@ -211,10 +216,40 @@ workflow Alignment {
 #    File output_file = mapped_file
     File output_indx = GatherBamFiles.output_bam_index
 #    File output_indx = mapped_indx
-    File? output_cram = Crammer.output_cram
-    File? output_cram_index = Crammer.output_cram_index
-    File? output_cram_md5 = Crammer.output_cram_md5
+#    File? output_cram = Crammer.output_cram
+#    File? output_cram_index = Crammer.output_cram_index
+#    File? output_cram_md5 = Crammer.output_cram_md5
   }
+  meta {
+    allowNestedInputs: true
+  }
+}
+
+workflow Cramming {
+
+  input {
+    File input_bam
+    String base_file_name
+    DNASeqSingleSampleReferences references
+    PapiSettings papi_settings
+  }
+
+  call Utils.ConvertToCram as Crammer {
+    input:
+      input_bam = input_bam,
+      ref_fasta = references.reference_fasta.ref_fasta,
+      ref_fasta_index = references.reference_fasta.ref_fasta_index,
+      output_basename = base_file_name,
+      preemptible_tries = papi_settings.agg_preemptible_tries
+    }
+
+
+  output {
+    File output_cram = Crammer.output_cram
+    File output_cram_index = Crammer.output_cram_index
+    File output_cram_md5 = Crammer.output_cram_md5
+  }
+
   meta {
     allowNestedInputs: true
   }
@@ -225,6 +260,11 @@ task BwaAndBamsormadup {
     File fastq1
     File fastq2
     String sample_name
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
     String output_bam_basename
     String duplicate_metrics_fname
 
@@ -241,7 +281,7 @@ task BwaAndBamsormadup {
   #  Int bamsormadup_cpu = 16
   Int total_cpu = 16
 
-  String rg_line = "@RG\\tID:~{sample_name}\\tSM:~{sample_name}\\tPL:ILLUMINA"
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
 
   String output_file = "~{output_bam_basename}.bam"
 #  String output_file = if to_cram then "~{output_bam_basename}.cram" else "~{output_bam_basename}.bam"
@@ -320,7 +360,7 @@ task BwaFromFastq {
   Int bamsormadup_cpu = 6
   Int total_cpu = bwa_cpu + bamsormadup_cpu
 
-  String rg_line = "@RG\\tID:~{sample_name}\\tSM:~{sample_name}\\tPL:ILLUMINA"
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
   
   String output_file = "~{output_bam_basename}.bam"
 #  String output_file = if to_cram then "~{output_bam_basename}.cram" else "~{output_bam_basename}.bam"
@@ -399,7 +439,7 @@ task BwaBamsormadupFromBamOrCram {
   Int bamsormadup_cpu = 16
   Int total_cpu = 16
 
-  String rg_line = "@RG\\tID:~{sample_name}\\tSM:~{sample_name}\\tPL:ILLUMINA"
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
 
   String output_file = "~{output_bam_basename}.bam"
 #  String output_file = if to_cram then "~{output_bam_basename}.cram" else "~{output_bam_basename}.bam"
@@ -481,7 +521,7 @@ task BwaFromBamOrCram {
   Int bamsormadup_cpu = 6
   Int total_cpu = bwa_cpu + bazam_cpu + bamsormadup_cpu
 
-  String rg_line = "@RG\\tID:~{sample_name}\\tSM:~{sample_name}\\tPL:ILLUMINA"
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
   
   String output_file = "~{output_bam_basename}.bam"
 #  String output_file = if to_cram then "~{output_bam_basename}.cram" else "~{output_bam_basename}.bam"

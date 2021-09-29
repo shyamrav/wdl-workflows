@@ -23,6 +23,7 @@ version 1.0
 ## licensing information pertaining to the included programs.
 
 import "tasks/Alignment.wdl"
+import "tasks/Utilities.wdl" as Utils
 import "tasks/AggregatedBamQC.wdl" as AggregatedQC
 import "tasks/Qc.wdl" as QC
 import "tasks/VariantCalling.wdl"
@@ -112,6 +113,16 @@ workflow SingleSample {
     }
   }
 
+  if(to_cram){
+    call Alignment.Crammer {
+      input:
+        input_bam = Alignment.output_file,
+        references = references,
+        base_file_name = inp.base_file_name,
+        papi_settings = papi_settings
+    }
+  }
+
   File mapped_file = select_first([Alignment.output_file, inp.bam_or_cram_or_fastq1])
   File mapped_indx = select_first([Alignment.output_indx, inp.bai_or_crai_or_fastq2])
 
@@ -193,10 +204,10 @@ workflow SingleSample {
 
   if (output_alignment_file) {
     if (to_cram){
-      File alignment_md5_to_output = select_first([Alignment.output_cram_md5])
+      File alignment_md5_to_output = select_first(Crammer.output_cram_md5])
     }
-    File alignment_file_to_output = select_first([Alignment.output_cram, mapped_file])
-    File alignment_indx_to_output = select_first([Alignment.output_cram_index, mapped_indx])
+    File alignment_file_to_output = select_first([Crammer.output_cram, mapped_file])
+    File alignment_indx_to_output = select_first([Crammer.output_cram_index, mapped_indx])
   }
 
   # Outputs that will be retained when execution is complete
