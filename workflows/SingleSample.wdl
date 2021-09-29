@@ -108,7 +108,7 @@ workflow SingleSample {
         haplotype_database_file = references.haplotype_database_file,
         lod_threshold = select_first([wes_lod_threshold, lod_threshold]),
       
-        to_cram = to_cram,
+#        to_cram = to_cram,
         subset_region = subset_region
     }
   }
