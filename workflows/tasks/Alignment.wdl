@@ -340,6 +340,11 @@ task BwaFromFastq {
   input {
     File fastq1
     File fastq2
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
     String sample_name
     String output_bam_basename
     String duplicate_metrics_fname
@@ -415,6 +420,11 @@ task BwaBamsormadupFromBamOrCram {
   input {
     File bam_or_cram
     File bai_or_crai
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
     String sample_name
     String output_bam_basename
     String duplicate_metrics_fname
@@ -498,6 +508,11 @@ task BwaFromBamOrCram {
   input {
     File bam_or_cram
     File bai_or_crai
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
     String sample_name
     String output_bam_basename
     String duplicate_metrics_fname
