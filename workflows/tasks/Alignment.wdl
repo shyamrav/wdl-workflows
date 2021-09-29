@@ -47,6 +47,11 @@ workflow Alignment {
       input:
         bam_or_cram = inp.bam_or_cram_or_fastq1,
         bai_or_crai = inp.bai_or_crai_or_fastq2,
+        RGID = inp.RGID,
+        RGPL = inp.RGPL,
+        RGPU = inp.RGPU,
+        RGLB = inp.RGLB,
+        RGCN = inp.RGCN,
         sample_name = inp.sample_name,
         output_bam_basename = inp.base_file_name,
         reference_fasta = references.reference_fasta,
@@ -225,7 +230,7 @@ workflow Alignment {
   }
 }
 
-workflow Cramming {
+workflow Crammer {
 
   input {
     File input_bam
