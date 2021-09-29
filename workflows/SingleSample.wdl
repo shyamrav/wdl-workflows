@@ -113,18 +113,20 @@ workflow SingleSample {
     }
   }
 
+  File mapped_file = select_first([Alignment.output_file, inp.bam_or_cram_or_fastq1])
+  File mapped_indx = select_first([Alignment.output_indx, inp.bai_or_crai_or_fastq2])
+
   if(to_cram){
     call Alignment.Crammer {
       input:
-        input_bam = Alignment.output_file,
+        input_bam = mapped_file,
         references = references,
         base_file_name = inp.base_file_name,
         papi_settings = papi_settings
     }
   }
 
-  File mapped_file = select_first([Alignment.output_file, inp.bam_or_cram_or_fastq1])
-  File mapped_indx = select_first([Alignment.output_indx, inp.bai_or_crai_or_fastq2])
+
 
   call AggregatedQC.AggregatedBamQC {
     input:
