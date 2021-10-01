@@ -234,7 +234,7 @@ workflow Alignment {
     File? selfSM = CheckContamination.selfSM
     Float? contamination = CheckContamination.contamination
 
-    File duplicate_metrics = select_first([BamCramToBam.duplicate_metrics, FastqToBam.duplicate_metrics])
+    File duplicate_metrics = select_first([BamCramToBam.duplicate_metrics, FastqToBam.duplicate_metrics, DragmapFastqToBam.duplicate_metrics])
 
     File output_file = GatherBamFiles.output_bam
 #    File output_file = mapped_file
