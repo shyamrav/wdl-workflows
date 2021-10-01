@@ -315,7 +315,7 @@ task DragmapAndBamsormadup {
     # dragen-os --build-hash-table true --ht-reference ~{reference_fasta.ref_fasta}  --output-directory ./~ {ref_dir}/
 
     # Align and Markdups
-    dragen-os -r ~{ref_dir} -1 ~{fastq1} -2 ~{fastq2} \
+    dragen-os -r ~{dragmap_reference_dir} -1 ~{fastq1} -2 ~{fastq2} \
       --RGID ~{RGID} --RGSM ~{sample_name} \
       --num-threads ~{total_cpu} 2> >(tee ~{output_bam_basename}.dragmap.stderr.log >&2) | \
     bamsormadup threads=~{total_cpu} SO=coordinate inputformat=sam outputformat=bam \
