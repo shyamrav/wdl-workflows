@@ -17,6 +17,7 @@ workflow MultipleSamples {
     
     Boolean realign = true
     Boolean to_cram = true
+    Boolean dragmap = false
     Boolean check_contamination = true
     Boolean check_fingerprints = false
 
@@ -83,7 +84,8 @@ workflow MultipleSamples {
         use_gatk3_haplotype_caller = use_gatk3_haplotype_caller,
         validate_gvcf = validate_gvcf,
   
-        subset_region = subset_region
+        subset_region = subset_region,
+        dragmap = dragmap
     }
   }
 

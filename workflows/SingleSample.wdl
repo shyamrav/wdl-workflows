@@ -44,6 +44,7 @@ workflow SingleSample {
     
     Boolean realign = true
     Boolean to_cram = true
+    Boolean dragmap = false
     Boolean check_contamination = true
     Boolean check_fingerprints = false
 
@@ -109,7 +110,8 @@ workflow SingleSample {
         lod_threshold = select_first([wes_lod_threshold, lod_threshold]),
       
 #        to_cram = to_cram,
-        subset_region = subset_region
+        subset_region = subset_region,
+        dragmap = dragmap
     }
   }
 

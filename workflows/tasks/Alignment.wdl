@@ -29,6 +29,7 @@ workflow Alignment {
 
     Boolean bin_base_qualities = true
     Boolean somatic = false
+    Boolean dragmap = false
   }
 
   Float cutoff_for_large_rg_in_gb = 7.5
@@ -65,27 +66,45 @@ workflow Alignment {
   if (inp.bam_or_cram_or_fastq1 != sub(inp.bam_or_cram_or_fastq1, ".cram$", "") + ".cram" &&
     inp.bam_or_cram_or_fastq1 != sub(inp.bam_or_cram_or_fastq1, ".bam$", "") + ".bam") {
 
-    # call BwaFromFastq {
-    call BwaAndBamsormadup as FastqToBam {
-      input:
-        fastq1 = inp.bam_or_cram_or_fastq1,
-        fastq2 = inp.bai_or_crai_or_fastq2,
-        RGID = inp.RGID,
-        RGPL = inp.RGPL,
-        RGPU = inp.RGPU,
-        RGLB = inp.RGLB,
-        RGCN = inp.RGCN,
-        sample_name = inp.sample_name,
-        output_bam_basename = inp.base_file_name,
-        reference_fasta = references.reference_fasta,
-        preemptible_tries = papi_settings.preemptible_tries,
-        duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
-        # to_cram = to_cram
+    if(dragmap) {
+      call DragmapAndBamsormadup as DragmapFastqToBam {
+        input:
+          fastq1 = inp.bam_or_cram_or_fastq1,
+          fastq2 = inp.bai_or_crai_or_fastq2,
+          RGID = inp.RGID,
+          RGPL = inp.RGPL,
+          RGPU = inp.RGPU,
+          RGLB = inp.RGLB,
+          RGCN = inp.RGCN,
+          sample_name = inp.sample_name,
+          output_bam_basename = inp.base_file_name,
+          reference_fasta = references.reference_fasta,
+          preemptible_tries = papi_settings.preemptible_tries,
+          duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
+      }
+    }
+    if(!dragmap){
+      call BwaAndBamsormadup as FastqToBam {
+        input:
+          fastq1 = inp.bam_or_cram_or_fastq1,
+          fastq2 = inp.bai_or_crai_or_fastq2,
+          RGID = inp.RGID,
+          RGPL = inp.RGPL,
+          RGPU = inp.RGPU,
+          RGLB = inp.RGLB,
+          RGCN = inp.RGCN,
+          sample_name = inp.sample_name,
+          output_bam_basename = inp.base_file_name,
+          reference_fasta = references.reference_fasta,
+          preemptible_tries = papi_settings.preemptible_tries,
+          duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
+          # to_cram = to_cram
+      }
     }
   }
   
-  File mapped_file = select_first([BamCramToBam.output_file, FastqToBam.output_file])
-  File mapped_indx = select_first([BamCramToBam.output_indx, FastqToBam.output_indx])
+  File mapped_file = select_first([BamCramToBam.output_file, FastqToBam.output_file, DragmapFastqToBam.output_file])
+  File mapped_indx = select_first([BamCramToBam.output_indx, FastqToBam.output_indx, DragmapFastqToBam.output_indx])
   Float mapped_file_size = size(mapped_file, "GiB")
 
   # Run BQSR here
@@ -257,6 +276,76 @@ workflow Crammer {
 
   meta {
     allowNestedInputs: true
+  }
+}
+
+task DragmapAndBamsormadup {
+  input {
+    File fastq1
+    File fastq2
+    String sample_name
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
+    String output_bam_basename
+    String duplicate_metrics_fname
+
+    ReferenceFasta reference_fasta
+
+    Int preemptible_tries
+  }
+
+  Int total_cpu = 16
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
+  String output_file = "~{output_bam_basename}.bam"
+  String ref_dir = "ref_dir"
+
+  command <<<
+    set -o pipefail
+    set -ex
+
+    (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
+
+    # Create Refdir
+    mkdir -p ~{ref_dir}
+    dragen-os --build-hash-table true --ht-reference ~{reference_fasta.ref_fasta}  --output-directory ./~{ref_dir}/
+
+    # Align and Markdups
+    dragen-os -r ~{ref_dir} -1 ~{fastq1} -2 ~{fastq2} \
+      --RGID ~{RGID} --RGSM ~{sample_name} \
+      --num-threads ~{total_cpu} 2> >(tee ~{output_bam_basename}.dragmap.stderr.log >&2) | \
+    bamsormadup threads=~{total_cpu} SO=coordinate inputformat=sam outputformat=bam \
+      reference=~{reference_fasta.ref_fasta} \
+      M=~{duplicate_metrics_fname} O=tmp.bam > tmp.bam
+
+    # Remove FASTQs to make space to reheader bam file
+    rm -f ~{fastq1} ~{fastq2}
+
+    # Changing header of bam to best practices version.
+    samtools view -H tmp.bam > header.sam
+    oldline=`grep "^@RG" header.sam`
+    newline=`echo -e "~{rg_line}"`
+    sed -i "s/$oldline/$newline/" header.sam
+    samtools reheader header.sam tmp.bam > ~{output_file}
+    rm tmp.bam
+    samtools index ~{output_file}
+
+    df -h; pwd; du -sh *
+  >>>
+  runtime {
+    docker: "shyrav/dragmap-biobambam2-samtools:0.0"
+    preemptible: preemptible_tries
+    memory: "64 GiB"
+    cpu: total_cpu
+    disks: "local-disk " + 400 + " HDD"
+  }
+  output {
+    File output_file = output_file
+    File output_indx = "~{output_file}.bai"
+    File dragmap_stderr_log = "~{output_bam_basename}.dragmap.stderr.log"
+    File duplicate_metrics = "~{duplicate_metrics_fname}"
   }
 }
 
