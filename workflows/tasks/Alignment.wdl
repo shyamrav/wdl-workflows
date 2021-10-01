@@ -79,6 +79,7 @@ workflow Alignment {
           sample_name = inp.sample_name,
           output_bam_basename = inp.base_file_name,
           reference_fasta = references.reference_fasta,
+          dragmap_reference_dir = references.dragmap_reference_dir,
           preemptible_tries = papi_settings.preemptible_tries,
           duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
       }
@@ -293,6 +294,7 @@ task DragmapAndBamsormadup {
     String duplicate_metrics_fname
 
     ReferenceFasta reference_fasta
+    File dragmap_reference_dir
 
     Int preemptible_tries
   }
@@ -309,8 +311,8 @@ task DragmapAndBamsormadup {
     (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
 
     # Create Refdir
-    mkdir -p ~{ref_dir}
-    dragen-os --build-hash-table true --ht-reference ~{reference_fasta.ref_fasta}  --output-directory ./~{ref_dir}/
+    # mkdir -p ~ {ref_dir}
+    # dragen-os --build-hash-table true --ht-reference ~{reference_fasta.ref_fasta}  --output-directory ./~ {ref_dir}/
 
     # Align and Markdups
     dragen-os -r ~{ref_dir} -1 ~{fastq1} -2 ~{fastq2} \
