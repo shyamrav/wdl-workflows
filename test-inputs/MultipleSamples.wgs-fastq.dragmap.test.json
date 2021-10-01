@@ -6,7 +6,16 @@
     "contamination_sites_bed": "gs://gcp-public-data--broad-references/hg38/v0/contamination-resources/1000g/1000g.phase3.100k.b38.vcf.gz.dat.bed",
     "contamination_sites_mu": "gs://gcp-public-data--broad-references/hg38/v0/contamination-resources/1000g/1000g.phase3.100k.b38.vcf.gz.dat.mu",
     "calling_interval_list": "gs://gcp-public-data--broad-references/hg38/v0/wgs_calling_regions.hg38.interval_list",
-    "dragmap_reference_dir": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/",
+    "dragmap_reference_dir": {
+      "ht_cfg": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/hash_table.cfg",
+      "ht_bin": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/hash_table.cfg.bin",
+      "ht_cmp": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/hash_table.cmp",
+      "ht_stats": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/hash_table_stats.txt",
+      "ref_idx_bin": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/ref_index.bin",
+      "ref_bin": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/reference.bin",
+      "rep_mask": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/repeat_mask.bin",
+      "str_table_bin": "gs://pb-dev-312200.appspot.com/references/hg38/dragmap-reference/str_table.bin"
+    },
     "reference_fasta": {
       "ref_dict": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.dict",
       "ref_fasta": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta",

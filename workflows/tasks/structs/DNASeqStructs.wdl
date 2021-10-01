@@ -25,16 +25,16 @@ struct ReferenceFasta {
   File ref_pac
 }
 
-#struct DragmapReferenceDir {
-#  File ht_cfg
-#  File ht_bin
-#  File ht_cmp
-#  File ht_stats
-#  File ref_idx_bin
-#  File ref_bin
-#  File rep_mask
-#  File str_table_bin
-#}
+struct DragmapReferenceDir {
+  File ht_cfg
+  File ht_bin
+  File ht_cmp
+  File ht_stats
+  File ref_idx_bin
+  File ref_bin
+  File rep_mask
+  File str_table_bin
+}
 
 struct DNASeqSingleSampleReferences {
   File contamination_sites_ud
@@ -43,8 +43,7 @@ struct DNASeqSingleSampleReferences {
   File calling_interval_list
 
   ReferenceFasta reference_fasta
-  #  DragmapReferenceDir dragmap_reference_dir
-  File dragmap_reference_dir
+  DragmapReferenceDir dragmap_reference_dir
 
   Array[File] known_indels_sites_vcfs
   Array[File] known_indels_sites_indices
