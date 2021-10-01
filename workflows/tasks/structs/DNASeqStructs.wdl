@@ -5,6 +5,11 @@ struct Input {
   String? final_gvcf_base_name
   File bam_or_cram_or_fastq1
   File bai_or_crai_or_fastq2
+  String RGID
+  String RGPL
+  String RGPU
+  String RGLB
+  String RGCN
   String sample_name
 }
   
