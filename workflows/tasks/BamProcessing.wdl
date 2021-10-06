@@ -15,6 +15,55 @@ version 1.0
 ## page at https://hub.docker.com/r/broadinstitute/genomes-in-the-cloud/ for detailed
 ## licensing information pertaining to the included programs.
 
+
+# Rename header of Bamfile to match with best practices
+task RenameHeader {
+  input {
+    File sortedbam
+    String sample_name
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
+    String output_bam_basename
+
+    Int preemptible_tries
+  }
+
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
+  String output_file = "~{output_bam_basename}.reheader.bam"
+
+  Float bam_size = size(sortedbam, "GiB")
+  Float disk_multiplier = 2.5
+  Int disk_size = ceil(disk_multiplier * bam_size + 20)
+
+  command <<<
+    set -o pipefail
+    set -ex
+
+    # Changing header of bam to best practices version.
+    samtools view -H ~{sortedbam} > header.sam
+    oldline=`grep "^@RG" header.sam`
+    newline=`echo -e "~{rg_line}"`
+    sed -i "s/$oldline/$newline/" header.sam
+    samtools reheader header.sam ~{sortedbam} > ~{output_file}
+    samtools index ~{output_file}
+  >>>
+  runtime {
+    docker: "shyrav/dragmap-biobambam2-samtools:0.0"
+    preemptible: preemptible_tries
+    memory: "3 GiB"
+    cpu: 1
+    disks: "local-disk " + disk_size + " HDD"
+  }
+  output {
+    File output_file = output_file
+    File output_indx = "~{output_file}.bai"
+  }
+}
+
+
 # Sort BAM file by coordinate order
 task SortSam {
   input {

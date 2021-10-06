@@ -83,6 +83,44 @@ workflow Alignment {
           preemptible_tries = papi_settings.preemptible_tries,
           duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
       }
+
+
+      call Dragmap {
+        input:
+          fastq1 = inp.bam_or_cram_or_fastq1,
+          fastq2 = inp.bai_or_crai_or_fastq2,
+          RGID = inp.RGID,
+          sample_name = inp.sample_name,
+          output_bam_basename = inp.base_file_name,
+          dragmap_reference_dir = references.dragmap_reference_dir,
+          preemptible_tries = papi_settings.preemptible_tries
+      }
+
+      call Processing.RenameHeader as RenameHeader {
+        input:
+          sortedbam = Dragmap.output_file,
+          sample_name = inp.sample_name,
+          RGID = inp.RGID,
+          RGPL = inp.RGPL,
+          RGPU = inp.RGPU,
+          RGLB = inp.RGLB,
+          RGCN = inp.RGCN,
+          output_bam_basename = inp.base_file_name,
+
+          preemptible_tries = papi_settings.preemptible_tries
+      }
+
+      Float total_bam_size = size(RenameHeader.output_file, "GiB")
+
+      call Processing.MarkDuplicates as MarkDuplicates {
+        input:
+          input_bams = [RenameHeader.output_file],
+          output_bam_basename = inp.base_file_name,
+          metrics_filename = inp.base_file_name + ".duplicate_metrics",
+          total_input_size = total_bam_size,
+          compression_level = 2,
+          preemptible_tries = papi_settings.preemptible_tries
+      }
     }
     if(!dragmap){
       call BwaAndBamsormadup as FastqToBam {
@@ -277,6 +315,43 @@ workflow Crammer {
 
   meta {
     allowNestedInputs: true
+  }
+}
+
+task Dragmap {
+  input {
+    File fastq1
+    File fastq2
+    String RGID
+    String sample_name
+    String output_bam_basename
+
+    DragmapReferenceDir dragmap_reference_dir
+
+    Int preemptible_tries
+  }
+  Int total_cpu = 32
+  String output_file = "~{output_bam_basename}.bam"
+
+  command <<<
+    set -o pipefail
+    set -ex
+
+    dragen-os -r `dirname ~{dragmap_reference_dir.ht_cfg}` -1 ~{fastq1} -2 ~{fastq2} \
+      --RGID ~{RGID} --RGSM ~{sample_name} \
+      --num-threads ~{total_cpu} 2> >(tee ~{output_bam_basename}.dragmap.stderr.log >&2) | \
+    samtools sort -Obam -o ~{output_file}
+  >>>
+  runtime {
+    docker: "shyrav/dragmap-biobambam2-samtools:0.0"
+    preemptible: preemptible_tries
+    memory: "120 GiB"
+    cpu: total_cpu
+    disks: "local-disk " + 300 + " HDD"
+  }
+  output {
+    File output_file = output_file
+    File dragmap_stderr_log = "~{output_bam_basename}.dragmap.stderr.log"
   }
 }
 
