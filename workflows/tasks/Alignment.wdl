@@ -299,20 +299,15 @@ task DragmapAndBamsormadup {
     Int preemptible_tries
   }
 
-  Int total_cpu = 16
+  Int total_cpu = 32
   String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
   String output_file = "~{output_bam_basename}.bam"
-  String ref_dir = "ref_dir"
 
   command <<<
     set -o pipefail
     set -ex
 
     (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
-
-    # Create Refdir
-    # mkdir -p ~ {ref_dir}
-    # dragen-os --build-hash-table true --ht-reference ~{reference_fasta.ref_fasta}  --output-directory ./~ {ref_dir}/
 
     # Align and Markdups
     dragen-os -r `dirname ~{dragmap_reference_dir.ht_cfg}` -1 ~{fastq1} -2 ~{fastq2} \
@@ -339,7 +334,7 @@ task DragmapAndBamsormadup {
   runtime {
     docker: "shyrav/dragmap-biobambam2-samtools:0.0"
     preemptible: preemptible_tries
-    memory: "64 GiB"
+    memory: "120 GiB"
     cpu: total_cpu
     disks: "local-disk " + 400 + " HDD"
   }
