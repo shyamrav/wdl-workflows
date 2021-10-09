@@ -501,7 +501,7 @@ task BwaAndBamsormadup {
     File duplicate_metrics = "~{duplicate_metrics_fname}"
   }
 }
-  
+
 task BwaFromFastq {
   input {
     File fastq1
