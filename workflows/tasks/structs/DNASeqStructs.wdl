@@ -23,6 +23,11 @@ struct ReferenceFasta {
   File ref_bwt
   File ref_ann
   File ref_pac
+  File ref_bwt2
+  File ref_ann2
+  File ref_pac2
+  File ref_amb2
+  File ref_0123
 }
 
 struct DNASeqSingleSampleReferences {
