@@ -303,7 +303,7 @@ task BwaAndBamsormadup {
 
     (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
 
-    bwa mem \
+    bwa-mem2 mem \
       -t 16 \
       -R '~{rg_line}' \
       -K 100000000 \
@@ -327,7 +327,7 @@ task BwaAndBamsormadup {
     # cromwell doesn't work with artifact registry:
     # java.lang.Exception: Registry australia-southeast1-docker.pkg.dev is not supported
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
-    docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
+    docker: "shyrav/bwa2-biobambam2:v0.1"
     preemptible: preemptible_tries
     memory: "64 GiB"
     cpu: total_cpu
