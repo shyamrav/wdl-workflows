@@ -322,13 +322,13 @@ task BwaTwoAndBamsormadup {
     (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
 
     bwa-mem2 mem \
-      -t 16 \
+      -t 32 \
       -R '~{rg_line}' \
       -K 100000000 \
       -v 3 -Y ~{reference_fasta.ref_fasta} ~{fastq1} ~{fastq2} \
       2> >(tee ~{output_bam_basename}.bwa.stderr.log >&2) | \
     bamsormadup \
-      threads=16 \
+      threads=32 \
       inputformat=sam \
       outputformat=bam \
       reference=~{reference_fasta.ref_fasta} \
@@ -403,13 +403,13 @@ task BwaAndBamsormadup {
     (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
 
     bwa mem \
-      -t 16 \
+      -t 32 \
       -R '~{rg_line}' \
       -K 100000000 \
       -v 3 -Y ~{reference_fasta.ref_fasta} ~{fastq1} ~{fastq2} \
       2> >(tee ~{output_bam_basename}.bwa.stderr.log >&2) | \
     bamsormadup \
-      threads=16 \
+      threads=32 \
       inputformat=sam \
       outputformat=bam \
       reference=~{reference_fasta.ref_fasta} \
