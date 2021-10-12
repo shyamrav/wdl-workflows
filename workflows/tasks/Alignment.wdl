@@ -66,7 +66,24 @@ workflow Alignment {
     inp.bam_or_cram_or_fastq1 != sub(inp.bam_or_cram_or_fastq1, ".bam$", "") + ".bam") {
 
     # call BwaFromFastq {
-    call BwaAndBamsormadup as FastqToBam {
+    call BwaTwoAndBamsormadup as FastqToBam {
+      input:
+        fastq1 = inp.bam_or_cram_or_fastq1,
+        fastq2 = inp.bai_or_crai_or_fastq2,
+        RGID = inp.RGID,
+        RGPL = inp.RGPL,
+        RGPU = inp.RGPU,
+        RGLB = inp.RGLB,
+        RGCN = inp.RGCN,
+        sample_name = inp.sample_name,
+        output_bam_basename = inp.base_file_name,
+        reference_fasta = references.reference_fasta,
+        preemptible_tries = papi_settings.preemptible_tries,
+        duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
+        # to_cram = to_cram
+    }
+
+    call BwaAndBamsormadup as FastqToBamOne {
       input:
         fastq1 = inp.bam_or_cram_or_fastq1,
         fastq2 = inp.bai_or_crai_or_fastq2,
@@ -83,6 +100,7 @@ workflow Alignment {
         # to_cram = to_cram
     }
   }
+  
   
   File mapped_file = select_first([BamCramToBam.output_file, FastqToBam.output_file])
   File mapped_indx = select_first([BamCramToBam.output_indx, FastqToBam.output_indx])
@@ -260,7 +278,7 @@ workflow Crammer {
   }
 }
 
-task BwaAndBamsormadup {
+task BwaTwoAndBamsormadup {
   input {
     File fastq1
     File fastq2
@@ -284,7 +302,7 @@ task BwaAndBamsormadup {
 
   #  Int bwa_cpu = 16
   #  Int bamsormadup_cpu = 16
-  Int total_cpu = 16
+  Int total_cpu = 32
 
   String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
 
@@ -329,7 +347,88 @@ task BwaAndBamsormadup {
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
     docker: "shyrav/bwa2-biobambam2:v0.1"
     preemptible: preemptible_tries
-    memory: "64 GiB"
+    memory: "120 GiB"
+    cpu: total_cpu
+    disks: "local-disk " + 400 + " HDD"
+  }
+  output {
+    File output_file = output_file
+    File output_indx = output_indx
+    File bwa_stderr_log = "~{output_bam_basename}.bwa.stderr.log"
+    File duplicate_metrics = "~{duplicate_metrics_fname}"
+  }
+}
+
+task BwaAndBamsormadup {
+  input {
+    File fastq1
+    File fastq2
+    String sample_name
+    String RGID
+    String RGPU
+    String RGPL
+    String RGCN
+    String RGLB
+    String output_bam_basename
+    String duplicate_metrics_fname
+
+    # reference_fasta.ref_alt is the .alt file from bwa-kit
+    # (https://github.com/lh3/bwa/tree/master/bwakit),
+    # listing the reference contigs that are "alternative".
+    ReferenceFasta reference_fasta
+
+    Int preemptible_tries
+#    Boolean to_cram = false
+  }
+
+  #  Int bwa_cpu = 16
+  #  Int bamsormadup_cpu = 16
+  Int total_cpu = 32
+
+  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
+
+  String output_file = "~{output_bam_basename}.bam"
+#  String output_file = if to_cram then "~{output_bam_basename}.cram" else "~{output_bam_basename}.bam"
+  String output_indx = "~{output_bam_basename}.bai"
+#  String output_indx = if to_cram then "~{output_bam_basename}.crai" else "~{output_bam_basename}.bai"
+
+  # BWA command options:
+  # -K     process INT input bases in each batch regardless of nThreads (for reproducibility)
+  # -t16   threads
+  # -R     read group header line such as '@RG\tID:foo\tSM:bar'
+  command <<<
+    set -o pipefail
+    set -ex
+
+    (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
+
+    bwa mem \
+      -t 16 \
+      -R '~{rg_line}' \
+      -K 100000000 \
+      -v 3 -Y ~{reference_fasta.ref_fasta} ~{fastq1} ~{fastq2} \
+      2> >(tee ~{output_bam_basename}.bwa.stderr.log >&2) | \
+    bamsormadup \
+      threads=16 \
+      inputformat=sam \
+      outputformat=bam \
+      reference=~{reference_fasta.ref_fasta} \
+      M=~{duplicate_metrics_fname} \
+      indexfilename=~{output_indx} \
+      optminpixeldif=2500 \
+      O=~{output_file} > ~{output_file}
+
+    df -h; pwd; du -sh *
+  >>>
+
+  runtime {
+    # docker: "australia-southeast1-docker.pkg.dev/cpg-common/images/bazam:v2"
+    # cromwell doesn't work with artifact registry:
+    # java.lang.Exception: Registry australia-southeast1-docker.pkg.dev is not supported
+    # docker: "gcr.io/cpg-common/bwa-bazam:v1"
+    docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
+    preemptible: preemptible_tries
+    memory: "120 GiB"
     cpu: total_cpu
     disks: "local-disk " + 400 + " HDD"
   }
