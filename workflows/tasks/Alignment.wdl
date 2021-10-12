@@ -72,10 +72,6 @@ workflow Alignment {
           fastq1 = inp.bam_or_cram_or_fastq1,
           fastq2 = inp.bai_or_crai_or_fastq2,
           RGID = inp.RGID,
-          RGPL = inp.RGPL,
-          RGPU = inp.RGPU,
-          RGLB = inp.RGLB,
-          RGCN = inp.RGCN,
           sample_name = inp.sample_name,
           output_bam_basename = inp.base_file_name,
           reference_fasta = references.reference_fasta,
@@ -84,21 +80,9 @@ workflow Alignment {
           duplicate_metrics_fname = inp.base_file_name + ".duplicate_metrics"
       }
 
-
-      call Dragmap {
-        input:
-          fastq1 = inp.bam_or_cram_or_fastq1,
-          fastq2 = inp.bai_or_crai_or_fastq2,
-          RGID = inp.RGID,
-          sample_name = inp.sample_name,
-          output_bam_basename = inp.base_file_name,
-          dragmap_reference_dir = references.dragmap_reference_dir,
-          preemptible_tries = papi_settings.preemptible_tries
-      }
-
       call Processing.RenameHeader as RenameHeader {
         input:
-          sortedbam = Dragmap.output_file,
+          sortedbam = DragmapFastqToBam.output_file,
           sample_name = inp.sample_name,
           RGID = inp.RGID,
           RGPL = inp.RGPL,
@@ -107,18 +91,6 @@ workflow Alignment {
           RGCN = inp.RGCN,
           output_bam_basename = inp.base_file_name,
 
-          preemptible_tries = papi_settings.preemptible_tries
-      }
-
-      Float total_bam_size = size(RenameHeader.output_file, "GiB")
-
-      call Processing.MarkDuplicates as MarkDuplicates {
-        input:
-          input_bams = [RenameHeader.output_file],
-          output_bam_basename = inp.base_file_name,
-          metrics_filename = inp.base_file_name + ".duplicate_metrics",
-          total_input_size = total_bam_size,
-          compression_level = 2,
           preemptible_tries = papi_settings.preemptible_tries
       }
     }
@@ -142,8 +114,8 @@ workflow Alignment {
     }
   }
   
-  File mapped_file = select_first([BamCramToBam.output_file, FastqToBam.output_file, DragmapFastqToBam.output_file])
-  File mapped_indx = select_first([BamCramToBam.output_indx, FastqToBam.output_indx, DragmapFastqToBam.output_indx])
+  File mapped_file = select_first([BamCramToBam.output_file, FastqToBam.output_file, RenameHeader.output_file])
+  File mapped_indx = select_first([BamCramToBam.output_indx, FastqToBam.output_indx, RenameHeader.output_indx])
   Float mapped_file_size = size(mapped_file, "GiB")
 
   # Run BQSR here
@@ -361,10 +333,6 @@ task DragmapAndBamsormadup {
     File fastq2
     String sample_name
     String RGID
-    String RGPU
-    String RGPL
-    String RGCN
-    String RGLB
     String output_bam_basename
     String duplicate_metrics_fname
 
@@ -375,8 +343,8 @@ task DragmapAndBamsormadup {
   }
 
   Int total_cpu = 32
-  String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
   String output_file = "~{output_bam_basename}.bam"
+  String output_indx = "~{output_file}.bai"
 
   command <<<
     set -o pipefail
@@ -390,19 +358,7 @@ task DragmapAndBamsormadup {
       --num-threads ~{total_cpu} 2> >(tee ~{output_bam_basename}.dragmap.stderr.log >&2) | \
     bamsormadup threads=~{total_cpu} SO=coordinate inputformat=sam outputformat=bam \
       reference=~{reference_fasta.ref_fasta} \
-      M=~{duplicate_metrics_fname} O=tmp.bam > tmp.bam
-
-    # Remove FASTQs to make space to reheader bam file
-    rm -f ~{fastq1} ~{fastq2}
-
-    # Changing header of bam to best practices version.
-    samtools view -H tmp.bam > header.sam
-    oldline=`grep "^@RG" header.sam`
-    newline=`echo -e "~{rg_line}"`
-    sed -i "s/$oldline/$newline/" header.sam
-    samtools reheader header.sam tmp.bam > ~{output_file}
-    rm tmp.bam
-    samtools index ~{output_file}
+      M=~{duplicate_metrics_fname} O=~{output_file} > ~{output_file}
 
     df -h; pwd; du -sh *
   >>>
@@ -415,7 +371,6 @@ task DragmapAndBamsormadup {
   }
   output {
     File output_file = output_file
-    File output_indx = "~{output_file}.bai"
     File dragmap_stderr_log = "~{output_bam_basename}.dragmap.stderr.log"
     File duplicate_metrics = "~{duplicate_metrics_fname}"
   }
