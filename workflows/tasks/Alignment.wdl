@@ -284,7 +284,7 @@ task BwaAndBamsormadup {
 
   #  Int bwa_cpu = 16
   #  Int bamsormadup_cpu = 16
-  Int total_cpu = 16
+  Int total_cpu = 32
 
   String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
 
@@ -304,13 +304,13 @@ task BwaAndBamsormadup {
     (while true; do df -h; pwd; du -sh *; free -m; sleep 300; done) &
 
     bwa mem \
-      -t 16 \
+      -t 32 \
       -R '~{rg_line}' \
       -K 100000000 \
       -v 3 -Y ~{reference_fasta.ref_fasta} ~{fastq1} ~{fastq2} \
       2> >(tee ~{output_bam_basename}.bwa.stderr.log >&2) | \
     bamsormadup \
-      threads=16 \
+      threads=32 \
       inputformat=sam \
       outputformat=bam \
       reference=~{reference_fasta.ref_fasta} \
@@ -329,7 +329,7 @@ task BwaAndBamsormadup {
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
     docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
     preemptible: preemptible_tries
-    memory: "64 GiB"
+    memory: "120 GiB"
     cpu: total_cpu
     disks: "local-disk " + 400 + " HDD"
   }
