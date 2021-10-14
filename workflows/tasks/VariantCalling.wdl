@@ -280,8 +280,8 @@ task HaplotypeCaller_GATK4_VCF {
   runtime {
     docker: gatk_docker
     preemptible: preemptible_tries
-    memory: "8 GiB"
-    cpu: "4"
+    memory: "6.5 GiB"
+    cpu: "2"
     bootDiskSizeGb: 15
     disks: "local-disk " + disk_size + " HDD"
   }
