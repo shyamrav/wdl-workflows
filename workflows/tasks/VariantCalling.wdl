@@ -261,7 +261,7 @@ task HaplotypeCaller_GATK4_VCF {
 
   command <<<
     set -e
-    gatk --java-options "-Xms7000m -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10" \
+    gatk --java-options "-Xms10000m -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10" \
       HaplotypeCaller \
       -R ~{ref_fasta} \
       -I ~{input_bam} \
@@ -280,8 +280,9 @@ task HaplotypeCaller_GATK4_VCF {
   runtime {
     docker: gatk_docker
     preemptible: preemptible_tries
-    memory: "8 GiB"
-    cpu: "4"
+    memory: "13 GiB"
+    cpu: "2"
+    cpuPlatform: "Intel Sandy Bridge"
     bootDiskSizeGb: 15
     disks: "local-disk " + disk_size + " HDD"
   }
