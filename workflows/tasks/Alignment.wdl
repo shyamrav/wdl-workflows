@@ -290,6 +290,41 @@ workflow Crammer {
   }
 }
 
+task Bamsormadup {
+  input {
+    File input_sam
+    String output_bam_basename
+    String duplicate_metrics_fname
+
+    ReferenceFasta reference_fasta
+
+    Int preemptible_tries
+  }
+  Int total_cpu = 16
+  String output_file = "~{output_bam_basename}.bam"
+
+  command <<<
+    set -o pipefail
+    set -ex
+    
+    cat ~{input_sam} | \
+      bamsormadup threads=~{total_cpu} SO=coordinate inputformat=sam outputformat=bam \
+        reference=~{reference_fasta.ref_fasta} \
+        M=~{duplicate_metrics_fname} O=~{output_file} > ~{output_file}
+  >>>
+  runtime {
+    docker: "shyrav/dragmap-biobambam2-samtools:0.0"
+    preemptible: preemptible_tries
+    memory: "64 GiB"
+    cpu: total_cpu
+    disks: "local-disk " + 400 + " HDD"
+  }
+  output {
+    File output_file = output_file
+    File dragmap_stderr_log = "~{output_bam_basename}.dragmap.stderr.log"
+  }
+}
+
 task Dragmap {
   input {
     File fastq1
@@ -302,8 +337,8 @@ task Dragmap {
 
     Int preemptible_tries
   }
-  Int total_cpu = 32
-  String output_file = "~{output_bam_basename}.bam"
+  Int total_cpu = 16
+  String output_file = "~{output_bam_basename}.sam"
 
   command <<<
     set -o pipefail
@@ -311,13 +346,12 @@ task Dragmap {
 
     dragen-os -r `dirname ~{dragmap_reference_dir.ht_cfg}` -1 ~{fastq1} -2 ~{fastq2} \
       --RGID ~{RGID} --RGSM ~{sample_name} \
-      --num-threads ~{total_cpu} 2> >(tee ~{output_bam_basename}.dragmap.stderr.log >&2) | \
-    samtools sort -Obam -o ~{output_file}
+      --num-threads ~{total_cpu} 2> >(tee ~{output_bam_basename}.dragmap.stderr.log >&2) > ~{output_file}
   >>>
   runtime {
     docker: "shyrav/dragmap-biobambam2-samtools:0.0"
     preemptible: preemptible_tries
-    memory: "120 GiB"
+    memory: "64 GiB"
     cpu: total_cpu
     disks: "local-disk " + 300 + " HDD"
   }
