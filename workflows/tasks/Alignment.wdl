@@ -330,6 +330,7 @@ task BwaAndBamsormadup {
     docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
     preemptible: preemptible_tries
     memory: "120 GiB"
+    cpuPlatform: "Intel Sandy Bridge"
     cpu: total_cpu
     disks: "local-disk " + 400 + " HDD"
   }
@@ -449,10 +450,10 @@ task BwaBamsormadupFromBamOrCram {
   String bazam_regions = if defined(subset_region) then "--regions ~{subset_region} " else ""
 
   # Not been tested yet
-  Int bwa_cpu = 16
-  Int bazam_cpu = 16
-  Int bamsormadup_cpu = 16
-  Int total_cpu = 16
+  Int bwa_cpu = 32
+  Int bazam_cpu = 32
+  Int bamsormadup_cpu = 32
+  Int total_cpu = 32
 
   String rg_line = "@RG\\tID:~{RGID}\\tSM:~{sample_name}\\tPL:~{RGPL}\\tPU:~{RGPU}\\tLB:~{RGLB}\\tCN:~{RGCN}"
 
@@ -478,13 +479,12 @@ task BwaBamsormadupFromBamOrCram {
       ~{reference_fasta.ref_fasta} /dev/stdin - \
       2> >(tee ~{output_bam_basename}.bwa.stderr.log >&2) | \
     bamsormadup \
-      threads=16 \
+      threads=~{bamsormadup_cpu} \
       inputformat=sam \
       outputformat=bam \
       reference=~{reference_fasta.ref_fasta} \
       M=~{duplicate_metrics_fname} \
       indexfilename=~{output_indx} \
-      optminpixeldif=2500 \
       O=~{output_file} > ~{output_file}
 
     df -h; pwd; du -sh *
@@ -497,9 +497,10 @@ task BwaBamsormadupFromBamOrCram {
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
     docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
     preemptible: preemptible_tries
-    memory: "64 GiB"
+    memory: "120 GB"
     cpu: total_cpu
-    disks: "local-disk " + 300 + " HDD"
+    cpuPlatform: "Intel Sandy Bridge"
+    disks: "local-disk " + 400 + " HDD"
   }
   output {
     File output_file = output_file
