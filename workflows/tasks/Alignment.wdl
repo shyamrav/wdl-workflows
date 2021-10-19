@@ -327,7 +327,7 @@ task BwaAndBamsormadup {
     # cromwell doesn't work with artifact registry:
     # java.lang.Exception: Registry australia-southeast1-docker.pkg.dev is not supported
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
-    docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
+    docker: "shyrav/biobambam2-samtools-bwa-bazam:latest"
     preemptible: preemptible_tries
     memory: "120 GiB"
     cpuPlatform: "Intel Sandy Bridge"
@@ -408,7 +408,7 @@ task BwaFromFastq {
     # cromwell doesn't work with artifact registry:
     # java.lang.Exception: Registry australia-southeast1-docker.pkg.dev is not supported
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
-    docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
+    docker: "shyrav/biobambam2-samtools-bwa-bazam:latest"
     preemptible: preemptible_tries
     memory: "64 GiB"
     cpu: total_cpu
@@ -495,7 +495,7 @@ task BwaBamsormadupFromBamOrCram {
     # cromwell doesn't work with artifact registry:
     # java.lang.Exception: Registry australia-southeast1-docker.pkg.dev is not supported
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
-    docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
+    docker: "shyrav/biobambam2-samtools-bwa-bazam:latest"
     preemptible: preemptible_tries
     memory: "120 GB"
     cpu: total_cpu
@@ -582,7 +582,7 @@ task BwaFromBamOrCram {
     # cromwell doesn't work with artifact registry:
     # java.lang.Exception: Registry australia-southeast1-docker.pkg.dev is not supported
     # docker: "gcr.io/cpg-common/bwa-bazam:v1"
-    docker: "gcr.io/pb-dev-312200/biobambam2-samtools-picard-bwa:latest"
+    docker: "shyrav/biobambam2-samtools-bwa-bazam:latest"
     preemptible: preemptible_tries
     memory: "64 GiB"
     cpu: total_cpu
